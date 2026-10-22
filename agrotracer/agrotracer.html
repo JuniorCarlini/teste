@@ -247,6 +247,17 @@ tr.us td { background: var(--leaf-soft); font-weight: 600; }
 .plan ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; font-size: 14px; align-content: start; }
 .plan li { display: grid; grid-template-columns: 16px 1fr; gap: 8px; }
 .plan li::before { content: ""; width: 14px; height: 14px; margin-top: 4px; border-radius: 50%; background: var(--leaf-soft); box-shadow: inset 0 0 0 4px var(--leaf); }
+.plans.one { grid-template-columns: 1fr; margin-top: -24px; }
+.plan.wide { grid-template-rows: auto; grid-template-columns: 220px 1fr auto; align-items: center; gap: 20px; border-style: dashed; }
+.plan.wide .who-for { min-height: 0; }
+.plan.wide .price b { font-size: 24px; }
+.trial { display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: center; padding: 24px; border-radius: 20px; background: var(--lime-soft); margin-bottom: 36px; }
+.trial-days { display: grid; justify-items: center; line-height: 1; }
+.trial-days b { font-family: var(--f-display); font-size: 64px; font-weight: 800; color: var(--leaf); }
+.trial-days span { font-weight: 700; font-size: 14px; }
+.trial-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; font-size: 14.5px; }
+.trial-steps li { display: grid; gap: 4px; padding-left: 14px; border-left: 2px solid var(--leaf); min-width: 0; }
+.trial-steps b { font-family: var(--f-mono); font-size: 12px; color: var(--leaf); letter-spacing: .04em; text-transform: uppercase; }
 .addons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .addon { border-radius: 16px; padding: 18px; border: 1px dashed var(--line); display: grid; gap: 6px; }
 .addon b { font-size: 15px; }
@@ -275,13 +286,15 @@ footer .wrap { display: grid; gap: 6px; }
   .phone { margin: 0 auto; }
   .actors { grid-template-columns: repeat(2, 1fr); }
   .mods { grid-template-columns: repeat(2, 1fr); }
-  .plans { grid-template-columns: repeat(2, 1fr); }
+  .plans, .plans.three { grid-template-columns: repeat(2, 1fr); }
+  .plan.wide { grid-template-columns: 1fr; }
   .app-body { grid-template-columns: 1fr; }
   .app-main { border-right: 0; border-bottom: 1px solid var(--line); }
 }
 @media (max-width: 680px) {
   section { padding-block: 52px; }
-  .stats, .actors, .mods, .plans, .plans.three, .addons, .road, .risks, .steps { grid-template-columns: 1fr; }
+  .stats, .actors, .mods, .plans, .plans.three, .addons, .road, .risks, .steps, .trial, .trial-steps, .plan.wide { grid-template-columns: 1fr; }
+  .trial-days { justify-items: start; }
   .kpis { grid-template-columns: 1fr 1fr; }
   .kpis .kpi:last-child { grid-column: span 2; }
   .nav { display: none; }
@@ -667,14 +680,23 @@ footer .wrap { display: grid; gap: 6px; }
       </div>
     </div>
 
-    <div class="group-label">Prestadores de serviço <small>cobrança por CNPJ ou CPF, por módulo ativo</small></div>
-    <div class="plans">
+    <div class="trial">
+      <div class="trial-days"><b>7</b><span>dias grátis</span></div>
+      <ol class="trial-steps">
+        <li><b>Dia 1</b>Escolhe o plano e cadastra o cartão. Nada é cobrado.</li>
+        <li><b>Dia 5</b>Aviso por WhatsApp e e-mail: a cobrança vem em 2 dias.</li>
+        <li><b>Dia 8</b>Primeira mensalidade cobrada no cartão. Cancelou antes, não paga nada.</li>
+      </ol>
+    </div>
+
+    <div class="group-label">Prestadores de serviço <small>cobrança por CNPJ ou CPF, 7 dias grátis em qualquer plano</small></div>
+    <div class="plans three">
       <div class="plan">
-        <h3><i style="background:var(--lime)"></i>Semente</h3>
-        <p class="who-for">Para testar: autônomo com uma máquina.</p>
-        <div class="price"><b data-m="0" data-a="0">R$ 0</b><span>/mês</span></div>
-        <span class="fee">Comissão 12% por serviço</span>
-        <ul><li>1 módulo</li><li>Até 5 pedidos por mês</li><li>Agenda de 1 máquina</li><li>Perfil com avaliações</li></ul>
+        <h3><i style="background:var(--lime)"></i>Broto</h3>
+        <p class="who-for">Autônomo com uma máquina.</p>
+        <div class="price"><b data-m="59" data-a="47">R$ 59</b><span>/mês</span></div>
+        <span class="fee">Comissão 8% por serviço</span>
+        <ul><li>1 módulo</li><li>Até 15 pedidos por mês</li><li>Agenda de 1 máquina</li><li>Perfil com avaliações</li></ul>
       </div>
       <div class="plan hot">
         <span class="badge">Mais indicado</span>
@@ -691,16 +713,17 @@ footer .wrap { display: grid; gap: 6px; }
         <span class="fee">Comissão 3% por serviço</span>
         <ul><li>Módulos ilimitados</li><li>Frota e equipe ilimitadas</li><li>Prioridade no ranking da região</li><li>Painel financeiro e notas</li><li>Selo "Prestador verificado"</li></ul>
       </div>
-      <div class="plan">
+    </div>
+
+    <div class="plans one">
+      <div class="plan wide">
         <h3><i style="background:var(--berry)"></i>Cooperativa</h3>
-        <p class="who-for">Cooperativas e redes com vários prestadores.</p>
-        <div class="price"><b data-m="sob" data-a="sob">Sob consulta</b></div>
-        <span class="fee">Comissão negociada</span>
-        <ul><li>Várias empresas num painel</li><li>Marca própria no WhatsApp</li><li>Integração com ERP</li><li>Gerente de conta</li></ul>
+        <p class="who-for">Cooperativas e redes com vários prestadores num painel só, marca própria no WhatsApp, integração com ERP e gerente de conta.</p>
+        <div class="price"><b>Sob consulta</b><span>· comissão negociada</span></div>
       </div>
     </div>
 
-    <div class="group-label">Lojas agropecuárias <small>anunciam produtos dentro do fluxo</small></div>
+    <div class="group-label">Lojas agropecuárias <small>anunciam produtos dentro do fluxo, 7 dias grátis</small></div>
     <div class="plans three">
       <div class="plan">
         <h3><i style="background:var(--lime)"></i>Balcão</h3>
@@ -732,7 +755,7 @@ footer .wrap { display: grid; gap: 6px; }
       <div class="addon"><b>Módulo adicional</b><span>R$ 39 / mês</span><p>Para quem está no Safra e quer atender um terceiro tipo de serviço.</p></div>
       <div class="addon"><b>Antecipação de recebíveis</b><span>taxa sobre o valor</span><p>Prestador recebe na hora o serviço que o produtor paga em 30 dias.</p></div>
     </div>
-    <p class="note">Por que assinatura + comissão baixa: em marketplace de serviço é comum o cliente fechar direto com o prestador depois do primeiro contato. Com mensalidade fixa e comissão pequena, o prestador continua tendo motivo para manter tudo na plataforma (agenda, relatório, cobrança).</p>
+    <p class="note">Teste com cartão: pedir o cartão já no cadastro filtra quem não vai usar de verdade e faz a maior parte dos testes virar assinatura, como no Google Workspace e em outras plataformas grandes. O aviso no dia 5 evita cobrança surpresa e reclamação no banco. Por que assinatura + comissão baixa: em marketplace de serviço é comum o cliente fechar direto com o prestador depois do primeiro contato. Com mensalidade fixa e comissão pequena, o prestador continua tendo motivo para manter tudo na plataforma (agenda, relatório, cobrança).</p>
   </div>
 </section>
 
@@ -746,7 +769,7 @@ footer .wrap { display: grid; gap: 6px; }
       <div class="phase">
         <span class="when">Fase 1 · 0 a 3 meses</span>
         <h3>MVP Pulverização</h3>
-        <ul><li>Assistente no WhatsApp Business API</li><li>Módulo Pulverização</li><li>Agenda e aceite do prestador</li><li>Uma região piloto (ex.: sudoeste goiano)</li><li>Planos Semente e Safra</li></ul>
+        <ul><li>Assistente no WhatsApp Business API</li><li>Módulo Pulverização</li><li>Agenda e aceite do prestador</li><li>Uma região piloto (ex.: sudoeste goiano)</li><li>Planos Broto e Safra com 7 dias grátis</li></ul>
       </div>
       <div class="phase">
         <span class="when">Fase 2 · 3 a 6 meses</span>
@@ -761,7 +784,7 @@ footer .wrap { display: grid; gap: 6px; }
     </div>
     <div class="risks">
       <div class="risk"><b>Regras da aplicação com drone</b><p>Prestador precisa estar regular no MAPA e o produtor precisa de receituário agronômico. O módulo pede esses documentos no cadastro e no pedido.</p></div>
-      <div class="risk"><b>Custo do WhatsApp</b><p>A API oficial cobra por conversa iniciada. Entra no custo por pedido e ajuda a definir o limite do plano gratuito.</p></div>
+      <div class="risk"><b>Custo do WhatsApp</b><p>A API oficial cobra por conversa iniciada. Entra no custo por pedido e ajuda a definir o limite de pedidos do plano Broto.</p></div>
       <div class="risk"><b>Negócio fechado por fora</b><p>Mitigado com comissão baixa, agenda e relatório que só existem dentro da plataforma, e avaliação que só conta pedidos feitos por ela.</p></div>
       <div class="risk"><b>Oferta antes da demanda</b><p>Começar cadastrando prestadores de uma região só, e só então divulgar o número de WhatsApp para os produtores dali.</p></div>
     </div>

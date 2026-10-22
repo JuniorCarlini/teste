@@ -16,7 +16,7 @@ Agronomia e topografia, Manutenção de máquinas, Construção rural, Loja agro
 
 | Público | Plano | Mensal | Comissão |
 |---|---|---|---|
-| Prestador | Semente | R$ 0 | 12% |
+| Prestador | Broto | R$ 59 | 8% |
 | Prestador | Safra | R$ 129 | 6% |
 | Prestador | Colheita | R$ 349 | 3% |
 | Prestador | Cooperativa | sob consulta | negociada |
@@ -24,6 +24,7 @@ Agronomia e topografia, Manutenção de máquinas, Construção rural, Loja agro
 | Loja | Vitrine | R$ 299 | 3% |
 | Loja | Rede | sob consulta | negociada |
 
+Todos os planos pagos têm **7 dias grátis com cartão cadastrado**: aviso no dia 5, primeira cobrança no dia 8, cancelou antes não paga.
 Anual com 20% de desconto. Extras: destaque patrocinado, módulo adicional, antecipação de recebíveis.
 
 ## Arquivos

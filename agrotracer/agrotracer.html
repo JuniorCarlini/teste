@@ -1,0 +1,794 @@
+<title>AgroTracer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: faixa de navegação fixa + seções empilhadas em coluna larga; cada seção é um "talhão" com cor própria */
+:root {
+  --bg: #F3F9F4;
+  --surface: #FFFFFF;
+  --surface-2: #E8F4EC;
+  --ink: #0F2419;
+  --muted: #557063;
+  --line: #D7E8DD;
+  --leaf: #0E9A5A;
+  --leaf-ink: #FFFFFF;
+  --lime: #9FDD4F;
+  --sky: #2B8CE6;
+  --sun: #FFB51F;
+  --berry: #E5487A;
+  --leaf-soft: #D4F2E1;
+  --sky-soft: #DCEBFB;
+  --sun-soft: #FFF0CC;
+  --lime-soft: #EAF8D6;
+  --berry-soft: #FCE0EA;
+  --chat-bg: #E9F1EA;
+  --bubble-in: #FFFFFF;
+  --bubble-out: #D2F5C4;
+  --shadow: 0 1px 2px rgba(15,36,25,.06), 0 8px 24px rgba(15,36,25,.07);
+  --f-display: "Bricolage Grotesque", "Figtree", system-ui, sans-serif;
+  --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B1611; --surface: #12211A; --surface-2: #182C22; --ink: #E6F3EB; --muted: #94B2A2; --line: #24392E;
+    --leaf: #2FC27C; --leaf-ink: #06140D; --lime: #B5EC6C; --sky: #5AA9F2; --sun: #FFC64A; --berry: #F36E98;
+    --leaf-soft: #133826; --sky-soft: #142B42; --sun-soft: #3A2E10; --lime-soft: #22351A; --berry-soft: #3A1826;
+    --chat-bg: #0F1D17; --bubble-in: #1B2E24; --bubble-out: #1D4A2F;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.3);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B1611; --surface: #12211A; --surface-2: #182C22; --ink: #E6F3EB; --muted: #94B2A2; --line: #24392E;
+  --leaf: #2FC27C; --leaf-ink: #06140D; --lime: #B5EC6C; --sky: #5AA9F2; --sun: #FFC64A; --berry: #F36E98;
+  --leaf-soft: #133826; --sky-soft: #142B42; --sun-soft: #3A2E10; --lime-soft: #22351A; --berry-soft: #3A1826;
+  --chat-bg: #0F1D17; --bubble-in: #1B2E24; --bubble-out: #1D4A2F;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.3);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.55; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+h1, h2, h3, h4 { font-family: var(--f-display); line-height: 1.1; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; border-radius: 6px; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--leaf); }
+.lead { color: var(--muted); font-size: 18px; max-width: 62ch; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* nav */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 9; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; align-items: center; gap: 24px; height: 60px; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--f-display); font-weight: 800; font-size: 20px; text-decoration: none; }
+.brand svg { flex: none; }
+.nav { display: flex; gap: 4px; overflow-x: auto; margin-left: auto; scrollbar-width: none; }
+.nav a { text-decoration: none; font-size: 14px; font-weight: 600; color: var(--muted); padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
+.nav a:hover { background: var(--surface-2); color: var(--ink); }
+
+section { padding-block: 72px; }
+section + section { border-top: 1px solid var(--line); }
+.sec-head { display: grid; gap: 12px; margin-bottom: 40px; }
+.sec-head h2 { font-size: clamp(30px, 4vw, 44px); font-weight: 800; letter-spacing: -.01em; }
+
+/* hero */
+.hero { padding-block: 56px 72px; }
+.hero-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: center; }
+.hero h1 { font-size: clamp(40px, 6.4vw, 76px); font-weight: 800; letter-spacing: -.025em; }
+.hero h1 em { font-style: normal; color: var(--leaf); }
+.hero h1 .hl { background: linear-gradient(transparent 62%, var(--lime) 62%); padding: 0 .08em; }
+.hero-copy { display: grid; gap: 22px; min-width: 0; }
+.pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 999px; }
+.pill i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.p-leaf { background: var(--leaf-soft); } .p-leaf i { background: var(--leaf); }
+.p-sky { background: var(--sky-soft); } .p-sky i { background: var(--sky); }
+.p-sun { background: var(--sun-soft); } .p-sun i { background: var(--sun); }
+.p-berry { background: var(--berry-soft); } .p-berry i { background: var(--berry); }
+
+/* phone / whatsapp mock */
+.phone { width: 100%; max-width: 360px; margin-left: auto; border-radius: 34px; padding: 10px; background: var(--ink); box-shadow: var(--shadow); }
+.screen { border-radius: 26px; overflow: hidden; background: var(--chat-bg); display: flex; flex-direction: column; }
+.chat-head { display: flex; align-items: center; gap: 10px; padding: 14px 14px; background: var(--leaf); color: var(--leaf-ink); }
+.avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--lime); display: grid; place-items: center; flex: none; }
+.chat-head b { display: block; font-size: 15px; }
+.chat-head small { font-size: 12px; opacity: .85; }
+.chat { display: flex; flex-direction: column; gap: 8px; padding: 14px 12px 16px; font-size: 13.5px; line-height: 1.4; }
+.msg { max-width: 84%; padding: 8px 10px; border-radius: 12px; background: var(--bubble-in); box-shadow: 0 1px 1px rgba(0,0,0,.06); }
+.msg.out { align-self: flex-end; background: var(--bubble-out); border-top-right-radius: 4px; }
+.msg.in { border-top-left-radius: 4px; }
+.msg time { display: block; text-align: right; font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+.opt { display: grid; gap: 6px; margin-top: 6px; }
+.opt div { display: flex; justify-content: space-between; gap: 8px; background: var(--surface-2); border-radius: 8px; padding: 6px 8px; font-size: 12.5px; }
+.opt b { font-variant-numeric: tabular-nums; }
+.stars { color: var(--sun); letter-spacing: 1px; }
+
+/* market */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 40px; }
+.stat { padding: 22px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); display: grid; gap: 6px; align-content: start; }
+.stat strong { font-family: var(--f-display); font-size: 40px; font-weight: 800; line-height: 1; }
+.stat:nth-child(1) strong { color: var(--leaf); }
+.stat:nth-child(2) strong { color: var(--sky); }
+.stat:nth-child(3) strong { color: var(--berry); }
+.stat p { color: var(--muted); font-size: 14.5px; }
+.stat a { font-size: 12px; color: var(--muted); }
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+table { width: 100%; border-collapse: collapse; min-width: 760px; font-size: 14.5px; }
+th, td { text-align: left; padding: 14px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--f-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 500; background: var(--surface-2); }
+tr:last-child td { border-bottom: 0; }
+tr.us td { background: var(--leaf-soft); font-weight: 600; }
+.y { color: var(--leaf); font-weight: 700; } .n { color: var(--muted); }
+.gap-box { margin-top: 24px; padding: 24px; border-radius: 18px; background: var(--sky-soft); display: grid; gap: 8px; }
+.gap-box h3 { font-size: 22px; }
+.gap-box p { max-width: 80ch; }
+
+/* actors */
+.actors { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.actor { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; display: grid; gap: 10px; align-content: start; }
+.actor .ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; }
+.actor h3 { font-size: 20px; }
+.actor p { color: var(--muted); font-size: 14.5px; }
+.actor ul { margin: 0; padding-left: 18px; font-size: 14px; display: grid; gap: 4px; }
+.tag { justify-self: start; font-family: var(--f-mono); font-size: 11px; padding: 3px 8px; border-radius: 6px; letter-spacing: .04em; }
+
+/* diagram */
+.diagram { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 16px; margin-bottom: 40px; }
+.diagram svg { display: block; min-width: 760px; width: 100%; height: auto; }
+.dg-node { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+.dg-core { fill: var(--leaf); }
+.dg-t { fill: var(--ink); font-family: var(--f-display); font-weight: 700; font-size: 17px; }
+.dg-s { fill: var(--muted); font-family: var(--f-body); font-size: 12.5px; }
+.dg-core-t { fill: var(--leaf-ink); font-family: var(--f-display); font-weight: 800; font-size: 19px; }
+.dg-core-s { fill: var(--leaf-ink); font-family: var(--f-body); font-size: 12.5px; opacity: .9; }
+.dg-e { stroke: var(--muted); stroke-width: 1.6; fill: none; }
+.dg-e.sky { stroke: var(--sky); } .dg-e.sun { stroke: var(--sun); } .dg-e.berry { stroke: var(--berry); } .dg-e.leaf { stroke: var(--leaf); }
+.dg-l { font-family: var(--f-mono); font-size: 11.5px; fill: var(--muted); }
+.mk-sky { fill: var(--sky); } .mk-sun { fill: var(--sun); } .mk-berry { fill: var(--berry); } .mk-leaf { fill: var(--leaf); }
+.dot-sky { fill: var(--sky); } .dot-sun { fill: var(--sun); } .dot-berry { fill: var(--berry); } .dot-lime { fill: var(--lime); }
+
+/* steps */
+.steps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 32px; counter-reset: s; list-style: none; margin: 0; padding: 0; }
+.steps li { display: grid; grid-template-columns: 40px 1fr; gap: 14px; padding: 14px 0; border-bottom: 1px dashed var(--line); min-width: 0; }
+.steps li::before { counter-increment: s; content: counter(s); width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-display); font-weight: 800; background: var(--surface); border: 2px solid var(--leaf); color: var(--leaf); }
+.steps h4 { font-size: 17px; margin-bottom: 4px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.steps p { color: var(--muted); font-size: 14.5px; }
+.who { font-family: var(--f-mono); font-size: 10.5px; font-weight: 500; padding: 2px 7px; border-radius: 5px; letter-spacing: .04em; text-transform: uppercase; }
+.w-prod { background: var(--sky-soft); color: var(--sky); }
+.w-bot { background: var(--leaf-soft); color: var(--leaf); }
+.w-prest { background: var(--sun-soft); color: color-mix(in srgb, var(--sun) 55%, var(--ink)); }
+.w-loja { background: var(--berry-soft); color: var(--berry); }
+
+/* modules */
+.mods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.mod { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; display: grid; gap: 12px; align-content: start; position: relative; overflow: hidden; }
+.mod::after { content: ""; position: absolute; right: -28px; top: -28px; width: 92px; height: 92px; border-radius: 50%; background: var(--c-soft); }
+.mod > * { position: relative; z-index: 1; }
+.mod .ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--c-soft); color: var(--c); }
+.mod h3 { font-size: 20px; }
+.mod p { color: var(--muted); font-size: 14.5px; }
+.mod .unit { font-family: var(--f-mono); font-size: 12px; color: var(--c); }
+.fields { display: flex; flex-wrap: wrap; gap: 6px; }
+.fields span { font-size: 12.5px; padding: 3px 9px; border-radius: 999px; background: var(--surface-2); color: var(--ink); }
+.mod.mvp { border: 2px solid var(--leaf); }
+.mvp-badge { position: absolute; top: 18px; right: 18px; z-index: 2; font-family: var(--f-mono); font-size: 10.5px; background: var(--leaf); color: var(--leaf-ink); padding: 3px 8px; border-radius: 6px; letter-spacing: .05em; }
+.c-leaf { --c: var(--leaf); --c-soft: var(--leaf-soft); }
+.c-sky { --c: var(--sky); --c-soft: var(--sky-soft); }
+.c-sun { --c: color-mix(in srgb, var(--sun) 60%, var(--ink)); --c-soft: var(--sun-soft); }
+.c-lime { --c: color-mix(in srgb, var(--lime) 45%, var(--ink)); --c-soft: var(--lime-soft); }
+.c-berry { --c: var(--berry); --c-soft: var(--berry-soft); }
+
+/* dashboard mock */
+.app { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); overflow: hidden; }
+.app-bar { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.app-bar b { font-family: var(--f-display); font-size: 17px; }
+.app-bar .sp { flex: 1; }
+.chip { font-size: 12.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); }
+.chip.on { background: var(--leaf); color: var(--leaf-ink); }
+.example { font-family: var(--f-mono); font-size: 10.5px; color: var(--muted); border: 1px dashed var(--line); padding: 2px 8px; border-radius: 6px; }
+.app-body { display: grid; grid-template-columns: 1fr 320px; }
+.app-main { padding: 20px; display: grid; gap: 20px; min-width: 0; border-right: 1px solid var(--line); }
+.app-side { padding: 20px; display: grid; gap: 14px; align-content: start; background: var(--surface-2); min-width: 0; }
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.kpi { padding: 14px; border-radius: 14px; border: 1px solid var(--line); display: grid; gap: 2px; }
+.kpi span { font-size: 12.5px; color: var(--muted); }
+.kpi b { font-family: var(--f-display); font-size: 26px; font-variant-numeric: tabular-nums; }
+.kpi small { font-size: 12px; color: var(--leaf); font-weight: 600; }
+.cal-wrap { overflow-x: auto; }
+.cal { display: grid; grid-template-columns: 52px repeat(6, minmax(92px, 1fr)); min-width: 620px; font-size: 12px; }
+.cal .h { font-weight: 700; padding: 6px 6px 10px; text-align: center; }
+.cal .h small { display: block; color: var(--muted); font-weight: 500; }
+.cal .t { color: var(--muted); font-family: var(--f-mono); font-size: 10.5px; padding-top: 2px; }
+.cal .c { border-top: 1px solid var(--line); border-left: 1px solid var(--line); min-height: 46px; padding: 3px; }
+.ev { border-radius: 8px; padding: 6px 7px; font-size: 11.5px; line-height: 1.25; height: 100%; }
+.ev b { display: block; font-size: 12px; }
+.ev.leaf { background: var(--leaf-soft); box-shadow: inset 3px 0 0 var(--leaf); }
+.ev.sky { background: var(--sky-soft); box-shadow: inset 3px 0 0 var(--sky); }
+.ev.sun { background: var(--sun-soft); box-shadow: inset 3px 0 0 var(--sun); }
+.ev.rain { background: repeating-linear-gradient(135deg, var(--surface-2) 0 6px, transparent 6px 12px); color: var(--muted); }
+.req { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 8px; }
+.req-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.req h4 { font-size: 15px; font-family: var(--f-body); font-weight: 700; }
+.req dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 12.5px; }
+.req dt { color: var(--muted); }
+.req dd { margin: 0; font-variant-numeric: tabular-nums; }
+.btns { display: flex; gap: 8px; }
+.btn { font: 600 13px var(--f-body); border-radius: 10px; padding: 8px 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; flex: 1; }
+.btn.pri { background: var(--leaf); color: var(--leaf-ink); border-color: var(--leaf); }
+.side-h { font-family: var(--f-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.ad { border-radius: 14px; padding: 12px; background: var(--berry-soft); font-size: 12.5px; display: grid; gap: 4px; }
+.ad b { font-size: 13px; }
+
+/* plans */
+.plan-head { display: flex; justify-content: space-between; align-items: end; gap: 24px; flex-wrap: wrap; margin-bottom: 28px; }
+.toggle { display: inline-flex; padding: 4px; background: var(--surface-2); border-radius: 999px; gap: 4px; }
+.toggle button { font: 600 14px var(--f-body); border: 0; background: transparent; color: var(--muted); padding: 8px 16px; border-radius: 999px; cursor: pointer; }
+.toggle button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.toggle em { font-style: normal; color: var(--leaf); font-size: 12px; margin-left: 4px; }
+.group-label { font-family: var(--f-display); font-size: 22px; font-weight: 700; margin: 8px 0 14px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.group-label small { font-family: var(--f-body); font-size: 14px; font-weight: 500; color: var(--muted); }
+.plans { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 40px; }
+.plans.three { grid-template-columns: repeat(3, 1fr); }
+.plan { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px; display: grid; grid-template-rows: auto auto auto 1fr; gap: 14px; position: relative; }
+.plan.hot { border: 2px solid var(--leaf); box-shadow: var(--shadow); }
+.plan .badge { position: absolute; top: -12px; left: 20px; background: var(--leaf); color: var(--leaf-ink); font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+.plan h3 { font-size: 22px; display: flex; align-items: center; gap: 8px; }
+.plan h3 i { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
+.plan .who-for { font-size: 13.5px; color: var(--muted); min-height: 2.8em; }
+.price { display: flex; align-items: baseline; gap: 4px; }
+.price b { font-family: var(--f-display); font-size: 36px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+.price span { color: var(--muted); font-size: 13.5px; }
+.fee { font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 10px; background: var(--surface-2); justify-self: start; }
+.plan ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; font-size: 14px; align-content: start; }
+.plan li { display: grid; grid-template-columns: 16px 1fr; gap: 8px; }
+.plan li::before { content: ""; width: 14px; height: 14px; margin-top: 4px; border-radius: 50%; background: var(--leaf-soft); box-shadow: inset 0 0 0 4px var(--leaf); }
+.addons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.addon { border-radius: 16px; padding: 18px; border: 1px dashed var(--line); display: grid; gap: 6px; }
+.addon b { font-size: 15px; }
+.addon span { font-family: var(--f-mono); font-size: 12.5px; color: var(--leaf); }
+.addon p { font-size: 14px; color: var(--muted); }
+.note { margin-top: 20px; font-size: 13.5px; color: var(--muted); max-width: 90ch; }
+
+/* roadmap */
+.road { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.phase { border-radius: 18px; padding: 22px; display: grid; gap: 10px; align-content: start; }
+.phase:nth-child(1) { background: var(--leaf-soft); }
+.phase:nth-child(2) { background: var(--sky-soft); }
+.phase:nth-child(3) { background: var(--berry-soft); }
+.phase h3 { font-size: 21px; }
+.phase .when { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.phase ul { margin: 0; padding-left: 18px; font-size: 14.5px; display: grid; gap: 4px; }
+.risks { margin-top: 32px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.risk { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: grid; gap: 6px; }
+.risk b { font-size: 15.5px; }
+.risk p { font-size: 14px; color: var(--muted); }
+footer { padding-block: 32px 48px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); }
+footer .wrap { display: grid; gap: 6px; }
+
+@media (max-width: 1000px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+  .phone { margin: 0 auto; }
+  .actors { grid-template-columns: repeat(2, 1fr); }
+  .mods { grid-template-columns: repeat(2, 1fr); }
+  .plans { grid-template-columns: repeat(2, 1fr); }
+  .app-body { grid-template-columns: 1fr; }
+  .app-main { border-right: 0; border-bottom: 1px solid var(--line); }
+}
+@media (max-width: 680px) {
+  section { padding-block: 52px; }
+  .stats, .actors, .mods, .plans, .plans.three, .addons, .road, .risks, .steps { grid-template-columns: 1fr; }
+  .kpis { grid-template-columns: 1fr 1fr; }
+  .kpis .kpi:last-child { grid-column: span 2; }
+  .nav { display: none; }
+  .plan { margin-top: 6px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .msg { animation: pop .4s both; }
+  .msg:nth-child(2) { animation-delay: .1s; } .msg:nth-child(3) { animation-delay: .2s; }
+  .msg:nth-child(4) { animation-delay: .3s; } .msg:nth-child(5) { animation-delay: .4s; }
+  @keyframes pop { from { transform: translateY(6px); } to { transform: none; } }
+}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#inicio" aria-label="AgroTracer, início">
+      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--leaf)"/><path d="M9 22c0-7 5-12 14-13-1 9-6 14-13 14" fill="none" stroke="var(--lime)" stroke-width="2.6" stroke-linecap="round"/><path d="M9 23l7-7" stroke="var(--leaf-ink)" stroke-width="2.2" stroke-linecap="round"/></svg>
+      AgroTracer
+    </a>
+    <nav class="nav" aria-label="Seções">
+      <a href="#mercado">Mercado</a>
+      <a href="#atores">Quem usa</a>
+      <a href="#fluxo">Fluxo</a>
+      <a href="#modulos">Módulos</a>
+      <a href="#layout">Layout</a>
+      <a href="#planos">Planos</a>
+      <a href="#roadmap">Roadmap</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section class="hero" id="inicio">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow">Conceito de produto · v0.1</span>
+      <h1>O <span class="hl">Airbnb</span> dos serviços <em>rurais</em>, dentro do WhatsApp.</h1>
+      <p class="lead">O produtor pede o serviço numa conversa de WhatsApp. A AgroTracer encontra o prestador certo, perto da fazenda e com agenda livre, confirma o horário e acompanha até o pagamento. Lojas agropecuárias oferecem os insumos no mesmo fluxo.</p>
+      <div class="pills">
+        <span class="pill p-sky"><i></i>Produtor usa de graça</span>
+        <span class="pill p-sun"><i></i>Prestador paga plano</span>
+        <span class="pill p-berry"><i></i>Loja anuncia produtos</span>
+        <span class="pill p-leaf"><i></i>Módulos por tipo de serviço</span>
+      </div>
+    </div>
+    <div class="phone" role="img" aria-label="Exemplo de conversa no WhatsApp entre produtor e AgroTracer">
+      <div class="screen">
+        <div class="chat-head">
+          <div class="avatar"><svg width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><path d="M7 23c0-8 6-13 17-14-1 10-7 15-15 15" fill="none" stroke="var(--leaf)" stroke-width="3" stroke-linecap="round"/></svg></div>
+          <div><b>AgroTracer</b><small>conta comercial · online</small></div>
+        </div>
+        <div class="chat">
+          <div class="msg out">Bom dia! Preciso pulverizar 80 ha de soja na semana que vem. Fazenda em Rio Verde.<time>07:12</time></div>
+          <div class="msg in">Bom dia, Seu Antônio! Drone ou terrestre? Já tem o receituário do agrônomo?<time>07:12</time></div>
+          <div class="msg out">Drone. Tenho o receituário sim 👍<time>07:14</time></div>
+          <div class="msg in">Achei 3 prestadores livres até 40 km:
+            <div class="opt">
+              <div><span>1 · AeroVerde <span class="stars">★★★★★</span></span><b>R$ 68/ha · ter</b></div>
+              <div><span>2 · DroneCampo <span class="stars">★★★★</span></span><b>R$ 62/ha · qui</b></div>
+              <div><span>3 · Pulvi Sul <span class="stars">★★★★★</span></span><b>R$ 71/ha · seg</b></div>
+            </div>
+            <time>07:14</time></div>
+          <div class="msg out">Pode ser o 1, terça.<time>07:15</time></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="mercado">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">01 · Mercado</span>
+      <h2>O que já existe e onde está o espaço</h2>
+      <p class="lead">Os marketplaces agro do Brasil focam em <b>alugar a máquina</b> ou em <b>vender produto</b>. Nenhum dos que encontramos junta pedido por WhatsApp, agenda do prestador e loja no mesmo fluxo.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><strong class="num">+38%</strong><p>de drones agrícolas novos ativados em 2026 em relação a 2025 (mais de 11 mil unidades).</p><a href="https://safras.com.br/demanda-por-drones-pulverizadores-acelera-no-brasil-e-mercado-deve-superar-r-2-bi-em-2026/" target="_blank" rel="noopener">Safras &amp; Mercado</a></div>
+      <div class="stat"><strong class="num">95%</strong><p>dos donos de drone também prestam serviço para terceiros, segundo a DJI Brasil. A oferta já existe, falta organizar a demanda.</p><a href="https://safras.com.br/demanda-por-drones-pulverizadores-acelera-no-brasil-e-mercado-deve-superar-r-2-bi-em-2026/" target="_blank" rel="noopener">Safras &amp; Mercado</a></div>
+      <div class="stat"><strong>Terceirizar</strong><p>Estudo CNA/Agroconsult: contratar colheita saiu mais barato que ter a própria máquina em todas as regiões analisadas.</p><a href="https://economicnewsbrasil.com.br/2026/08/26/aluguel-maquinas-agricolas-produtor-colheitadeira/" target="_blank" rel="noopener">Economic News Brasil</a></div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Plataforma</th><th>Modelo</th><th>Pedido por WhatsApp</th><th>Agenda do prestador</th><th>Loja / insumos</th><th>Como ganha</th></tr></thead>
+        <tbody>
+          <tr><td><b>Uller</b></td><td>"Uber das máquinas": produtor aluga máquina de outro produtor</td><td class="n">Não</td><td class="n">Parcial</td><td class="n">Não</td><td>Comissão por operação</td></tr>
+          <tr><td><b>Agrishare</b></td><td>Aluguel de máquinas de agricultores e prestadores</td><td class="n">Não</td><td class="n">Não</td><td class="n">Não</td><td>Comissão</td></tr>
+          <tr><td><b>Alluagro</b></td><td>Conecta donos de máquina e produtores, foco em geolocalização</td><td class="n">Não</td><td class="n">Não</td><td class="n">Não</td><td>Comissão</td></tr>
+          <tr><td><b>Agromatch</b> (AR)</td><td>Máquina ociosa na entressafra para quem precisa</td><td class="n">Não</td><td class="n">Não</td><td class="n">Não</td><td>Comissão</td></tr>
+          <tr><td><b>Agrofy</b></td><td>Classificados e e-commerce de máquinas e insumos</td><td class="n">Não</td><td class="n">Não</td><td class="y">Sim</td><td>Anúncio e venda</td></tr>
+          <tr class="us"><td>AgroTracer</td><td>Serviço completo com operador, por módulo</td><td class="y">Sim, canal principal</td><td class="y">Sim, central</td><td class="y">Sim, no fluxo</td><td>Plano mensal + comissão baixa</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="gap-box">
+      <h3>A diferença da AgroTracer</h3>
+      <p>O produtor não baixa app e não preenche cadastro: ele já está no WhatsApp. Quem paga é quem ganha com o pedido, o prestador e a loja. E cada tipo de serviço tem seu módulo, com os campos e unidades certos (hectare, hora, quilômetro, cabeça).</p>
+    </div>
+  </div>
+</section>
+
+<section id="atores">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">02 · Quem usa</span>
+      <h2>Quatro lados da mesma conversa</h2>
+    </div>
+    <div class="actors">
+      <div class="actor">
+        <div class="ic" style="background:var(--sky-soft)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg></div>
+        <span class="tag w-prod">CLIENTE · GRÁTIS</span>
+        <h3>Produtor rural</h3>
+        <p>Pede o serviço pelo WhatsApp, escolhe entre opções e avalia no final.</p>
+        <ul><li>Sem app para baixar</li><li>Histórico de serviços por talhão</li><li>Lembrete e confirmação automáticos</li></ul>
+      </div>
+      <div class="actor">
+        <div class="ic" style="background:var(--sun-soft)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--sun)" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></div>
+        <span class="tag w-prest">PAGA PLANO</span>
+        <h3>Prestador de serviço</h3>
+        <p>Recebe pedidos já qualificados e organiza agenda, equipe e máquinas no painel.</p>
+        <ul><li>Agenda por máquina e operador</li><li>Aceita ou recusa em 1 toque</li><li>Relatório de execução para o cliente</li></ul>
+      </div>
+      <div class="actor">
+        <div class="ic" style="background:var(--berry-soft)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--berry)" stroke-width="2" stroke-linecap="round"><path d="M4 9l2-5h12l2 5M4 9v11h16V9M4 9h16M10 20v-6h4v6"/></svg></div>
+        <span class="tag w-loja">PAGA PLANO</span>
+        <h3>Loja agropecuária</h3>
+        <p>Cadastra o catálogo e aparece quando o pedido combina: quem vai pulverizar precisa de adjuvante.</p>
+        <ul><li>Vitrine por região</li><li>Oferta no momento do pedido</li><li>Retirada ou entrega na fazenda</li></ul>
+      </div>
+      <div class="actor">
+        <div class="ic" style="background:var(--leaf-soft)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--leaf)" stroke-width="2" stroke-linecap="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 10h8"/></svg></div>
+        <span class="tag w-bot">PLATAFORMA</span>
+        <h3>Assistente AgroTracer</h3>
+        <p>Robô com IA no WhatsApp. Entende áudio e texto, faz as perguntas do módulo e cruza com as agendas.</p>
+        <ul><li>Entende áudio e localização</li><li>Ranking por distância, nota e preço</li><li>Escala para atendente humano</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="fluxo">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">03 · Fluxo de conexão</span>
+      <h2>Como cada um se conecta</h2>
+      <p class="lead">O mapa mostra quem fala com quem. O assistente fica no centro: o produtor nunca conversa com o painel, e o prestador nunca precisa ficar no WhatsApp esperando cliente.</p>
+    </div>
+
+    <div class="diagram">
+      <svg viewBox="0 0 920 420" role="img" aria-label="Diagrama de conexões entre produtor, assistente, prestador, agenda e loja">
+        <defs>
+          <marker id="a-sky" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk-sky" d="M0 0L10 5L0 10z"/></marker>
+          <marker id="a-sun" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk-sun" d="M0 0L10 5L0 10z"/></marker>
+          <marker id="a-berry" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk-berry" d="M0 0L10 5L0 10z"/></marker>
+          <marker id="a-leaf" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk-leaf" d="M0 0L10 5L0 10z"/></marker>
+        </defs>
+
+        <!-- edges -->
+        <path class="dg-e sky" d="M200 178 H350" marker-end="url(#a-sky)"/>
+        <text class="dg-l" x="275" y="168" text-anchor="middle">pedido (texto/áudio)</text>
+        <path class="dg-e leaf" d="M350 222 H200" marker-end="url(#a-leaf)"/>
+        <text class="dg-l" x="275" y="242" text-anchor="middle">3 opções + confirmação</text>
+
+        <path class="dg-e leaf" d="M570 168 C640 168 650 92 710 92" marker-end="url(#a-leaf)"/>
+        <text class="dg-l" x="620" y="110" text-anchor="middle">convite do serviço</text>
+        <path class="dg-e sun" d="M710 120 C670 120 660 192 572 192" marker-end="url(#a-sun)"/>
+        <text class="dg-l" x="648" y="176" text-anchor="middle">aceite + preço</text>
+
+        <path class="dg-e sun" d="M800 132 V282" marker-end="url(#a-sun)"/>
+        <text class="dg-l" x="812" y="212">bloqueia horário</text>
+        <path class="dg-e leaf" d="M710 312 C650 312 640 236 572 230" marker-end="url(#a-leaf)"/>
+        <text class="dg-l" x="636" y="294" text-anchor="middle">disponibilidade</text>
+
+        <path class="dg-e berry" d="M460 330 V262" marker-end="url(#a-berry)"/>
+        <text class="dg-l" x="472" y="300">oferta de insumo</text>
+
+        <path class="dg-e sky" d="M110 248 V370 H340" marker-end="url(#a-sky)"/>
+        <text class="dg-l" x="120" y="312">compra / retirada</text>
+
+        <!-- nodes -->
+        <rect class="dg-node" x="20" y="148" width="180" height="100" rx="16"/>
+        <circle class="dot-sky" cx="44" cy="174" r="7"/>
+        <text class="dg-t" x="58" y="180">Produtor</text>
+        <text class="dg-s" x="38" y="204">fala só pelo WhatsApp</text>
+        <text class="dg-s" x="38" y="222">não paga nada</text>
+
+        <rect class="dg-core" x="350" y="140" width="220" height="120" rx="20"/>
+        <text class="dg-core-t" x="460" y="182" text-anchor="middle">Assistente AgroTracer</text>
+        <text class="dg-core-s" x="460" y="206" text-anchor="middle">IA no WhatsApp + motor de match</text>
+        <text class="dg-core-s" x="460" y="226" text-anchor="middle">distância · agenda · nota · preço</text>
+
+        <rect class="dg-node" x="710" y="52" width="190" height="80" rx="16"/>
+        <circle class="dot-sun" cx="734" cy="80" r="7"/>
+        <text class="dg-t" x="748" y="86">Prestador</text>
+        <text class="dg-s" x="728" y="110">painel web/app + WhatsApp</text>
+
+        <rect class="dg-node" x="710" y="282" width="190" height="80" rx="16"/>
+        <circle class="dot-lime" cx="734" cy="310" r="7"/>
+        <text class="dg-t" x="748" y="316">Agenda</text>
+        <text class="dg-s" x="728" y="340">por máquina e operador</text>
+
+        <rect class="dg-node" x="340" y="330" width="240" height="72" rx="16"/>
+        <circle class="dot-berry" cx="364" cy="358" r="7"/>
+        <text class="dg-t" x="378" y="364">Loja agropecuária</text>
+        <text class="dg-s" x="360" y="386">catálogo regional de insumos</text>
+      </svg>
+    </div>
+
+    <ol class="steps">
+      <li><div><h4>Pede o serviço <span class="who w-prod">produtor</span></h4><p>Manda mensagem ou áudio: "preciso pulverizar 80 ha de soja semana que vem". Pode enviar a localização da fazenda.</p></div></li>
+      <li><div><h4>Identifica o módulo <span class="who w-bot">assistente</span></h4><p>A IA reconhece que é pulverização e faz só as perguntas daquele módulo: área, cultura, drone ou terrestre, receituário.</p></div></li>
+      <li><div><h4>Faz o match <span class="who w-bot">assistente</span></h4><p>Filtra prestadores do módulo num raio de distância, com agenda livre na janela pedida, e ordena por nota, preço e distância.</p></div></li>
+      <li><div><h4>Mostra 3 opções <span class="who w-prod">produtor</span></h4><p>Preço estimado, data e avaliação de cada um. O produtor responde com o número da opção.</p></div></li>
+      <li><div><h4>Aceita o pedido <span class="who w-prest">prestador</span></h4><p>Recebe notificação no painel e no WhatsApp. Tem um prazo (ex.: 2 h) para aceitar; se não aceitar, o próximo da lista é chamado.</p></div></li>
+      <li><div><h4>Agenda travada <span class="who w-bot">assistente</span></h4><p>O horário é bloqueado na agenda da máquina e do operador. Produtor recebe confirmação e lembrete na véspera.</p></div></li>
+      <li><div><h4>Oferta da loja <span class="who w-loja">loja</span></h4><p>Se o serviço pede insumo (adjuvante, semente, ração), lojas da região com plano aparecem com oferta e retirada.</p></div></li>
+      <li><div><h4>Executa e registra <span class="who w-prest">prestador</span></h4><p>Check-in na fazenda, fotos, mapa da área feita e relatório. Se chover, remarca pela própria agenda.</p></div></li>
+      <li><div><h4>Paga e avalia <span class="who w-prod">produtor</span></h4><p>Pagamento via Pix pela plataforma (ou direto, conforme o plano). Avaliação de 1 a 5 alimenta o ranking.</p></div></li>
+      <li><div><h4>Volta a chamar <span class="who w-bot">assistente</span></h4><p>Com o histórico do talhão, o assistente sugere o próximo serviço da safra: "a soja de vocês está perto da colheita".</p></div></li>
+    </ol>
+  </div>
+</section>
+
+<section id="modulos">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">04 · Módulos</span>
+      <h2>Um módulo para cada tipo de serviço</h2>
+      <p class="lead">Cada módulo tem perguntas, unidade de cobrança, documentos e regras próprias. O prestador ativa os módulos que atende; o plano define quantos.</p>
+    </div>
+    <div class="mods">
+      <article class="mod c-leaf mvp">
+        <span class="mvp-badge">MVP</span>
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="6" r="2.5"/><circle cx="19" cy="6" r="2.5"/><path d="M7.5 6h9M12 6v5M8 14l-2 6M12 14v6M16 14l2 6"/><rect x="9" y="10" width="6" height="4" rx="1"/></svg></div>
+        <h3>Pulverização</h3>
+        <p>Drone, autopropelido ou avião agrícola. O módulo com mais demanda e oferta crescendo.</p>
+        <span class="unit">R$ / hectare</span>
+        <div class="fields"><span>área (ha)</span><span>cultura</span><span>tipo de aplicação</span><span>receituário agronômico</span><span>janela de vento/chuva</span><span>mapa da área</span></div>
+      </article>
+      <article class="mod c-sun">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="9" width="12" height="7" rx="1.5"/><path d="M15 11h4l2 3v2h-6"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/><path d="M3 9l2-4h6l2 4"/></svg></div>
+        <h3>Colheita</h3>
+        <p>Colhedora com operador, com ou sem transbordo.</p>
+        <span class="unit">R$ / ha ou saca colhida</span>
+        <div class="fields"><span>área (ha)</span><span>cultura</span><span>umidade prevista</span><span>transbordo</span><span>acesso à lavoura</span></div>
+      </article>
+      <article class="mod c-lime">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21V11M12 11c0-4 3-6 7-6 0 4-3 6-7 6zM12 14c0-3-2-5-6-5 0 3 2 5 6 5z"/><path d="M4 21h16"/></svg></div>
+        <h3>Plantio e preparo</h3>
+        <p>Semeadura, gradagem, subsolagem, calagem.</p>
+        <span class="unit">R$ / hectare</span>
+        <div class="fields"><span>área (ha)</span><span>operação</span><span>espaçamento</span><span>semente própria?</span></div>
+      </article>
+      <article class="mod c-sky">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 7h12v9H2zM14 10h4l4 3v3h-8"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg></div>
+        <h3>Frete e transporte</h3>
+        <p>Grãos, animais, máquinas em prancha.</p>
+        <span class="unit">R$ / km ou tonelada</span>
+        <div class="fields"><span>origem e destino</span><span>carga (t)</span><span>tipo de caminhão</span><span>data de embarque</span></div>
+      </article>
+      <article class="mod c-berry">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 11c0-4 3-7 7-7s7 3 7 7v3l2 3H3l2-3z"/><path d="M9 20a3 3 0 006 0"/></svg></div>
+        <h3>Veterinária e manejo</h3>
+        <p>Vacinação, inseminação, casqueamento, exames.</p>
+        <span class="unit">R$ / cabeça ou visita</span>
+        <div class="fields"><span>nº de cabeças</span><span>espécie</span><span>procedimento</span><span>curral disponível</span></div>
+      </article>
+      <article class="mod c-leaf">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></div>
+        <h3>Agronomia e topografia</h3>
+        <p>Análise de solo, receituário, georreferenciamento, CAR.</p>
+        <span class="unit">R$ / visita ou hectare</span>
+        <div class="fields"><span>serviço</span><span>área (ha)</span><span>matrícula/CAR</span><span>laudo em PDF</span></div>
+      </article>
+      <article class="mod c-sun">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 7l3-3 3 3-3 3M17 4v0M4 20l9-9M11 7l6 6"/></svg></div>
+        <h3>Manutenção de máquinas</h3>
+        <p>Mecânico de campo, solda, elétrica, revisão.</p>
+        <span class="unit">R$ / hora + deslocamento</span>
+        <div class="fields"><span>máquina e modelo</span><span>problema</span><span>fotos/áudio</span><span>urgência</span></div>
+      </article>
+      <article class="mod c-sky">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10l8-6 8 6v10"/><path d="M9 20v-6h6v6"/></svg></div>
+        <h3>Construção rural</h3>
+        <p>Cercas, currais, poços, terraplanagem.</p>
+        <span class="unit">R$ / metro ou empreitada</span>
+        <div class="fields"><span>tipo de obra</span><span>medida</span><span>material incluso?</span><span>fotos do local</span></div>
+      </article>
+      <article class="mod c-berry">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9l2-5h12l2 5M4 9v11h16V9M4 9h16"/><path d="M9 13h6"/></svg></div>
+        <h3>Loja agro</h3>
+        <p>Módulo de produto, não de serviço. Catálogo que entra no fluxo dos outros módulos.</p>
+        <span class="unit">vitrine + comissão por venda</span>
+        <div class="fields"><span>catálogo</span><span>estoque</span><span>raio de entrega</span><span>vínculo com módulos</span></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="layout">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">05 · Layout</span>
+      <h2>Painel do prestador</h2>
+      <p class="lead">Onde o prestador passa o dia: pedidos novos à direita, agenda da semana no centro. O cliente fica no WhatsApp; o painel é só de quem presta o serviço.</p>
+    </div>
+    <div class="app" aria-label="Exemplo do painel do prestador">
+      <div class="app-bar">
+        <b>AeroVerde Pulverização</b>
+        <span class="chip on">Pulverização</span>
+        <span class="chip">Plantio</span>
+        <span class="sp"></span>
+        <span class="example">dados de exemplo</span>
+      </div>
+      <div class="app-body">
+        <div class="app-main">
+          <div class="kpis">
+            <div class="kpi"><span>Pedidos novos</span><b>3</b><small>1 expira em 40 min</small></div>
+            <div class="kpi"><span>Agendado na semana</span><b>640 ha</b><small>4 fazendas</small></div>
+            <div class="kpi"><span>A receber em outubro</span><b>R$ 38.400</b><small>+18% vs. setembro</small></div>
+          </div>
+          <div class="cal-wrap">
+            <div class="cal">
+              <div></div>
+              <div class="h">Seg<small>27/10</small></div><div class="h">Ter<small>28/10</small></div><div class="h">Qua<small>29/10</small></div><div class="h">Qui<small>30/10</small></div><div class="h">Sex<small>31/10</small></div><div class="h">Sáb<small>01/11</small></div>
+
+              <div class="t">06h</div>
+              <div class="c"><div class="ev leaf"><b>Faz. Boa Vista</b>120 ha · soja · Drone 1</div></div>
+              <div class="c"><div class="ev sky"><b>Sítio Ipê</b>80 ha · soja · Drone 1</div></div>
+              <div class="c"><div class="ev rain">previsão de chuva</div></div>
+              <div class="c"><div class="ev leaf"><b>Faz. Santa Rita</b>200 ha · milho</div></div>
+              <div class="c"></div>
+              <div class="c"><div class="ev sun"><b>Revisão Drone 2</b>manutenção</div></div>
+
+              <div class="t">10h</div>
+              <div class="c"><div class="ev leaf"><b>Faz. Boa Vista</b>continuação</div></div>
+              <div class="c"></div>
+              <div class="c"><div class="ev rain">previsão de chuva</div></div>
+              <div class="c"><div class="ev leaf"><b>Faz. Santa Rita</b>continuação</div></div>
+              <div class="c"><div class="ev sky"><b>Faz. Recanto</b>240 ha · soja</div></div>
+              <div class="c"></div>
+
+              <div class="t">15h</div>
+              <div class="c"></div>
+              <div class="c"><div class="ev sky"><b>Sítio Ipê</b>relatório</div></div>
+              <div class="c"></div>
+              <div class="c"></div>
+              <div class="c"><div class="ev sky"><b>Faz. Recanto</b>continuação</div></div>
+              <div class="c"></div>
+            </div>
+          </div>
+        </div>
+        <aside class="app-side">
+          <span class="side-h">Pedidos novos</span>
+          <div class="req">
+            <div class="req-top"><h4>Antônio · Rio Verde (GO)</h4><span class="who w-prod">via WhatsApp</span></div>
+            <dl><dt>Serviço</dt><dd>Drone · soja · 80 ha</dd><dt>Data</dt><dd>ter, 28/10 · manhã</dd><dt>Distância</dt><dd>27 km</dd><dt>Valor</dt><dd><b>R$ 5.440</b> (R$ 68/ha)</dd></dl>
+            <div class="btns"><button class="btn pri" type="button">Aceitar</button><button class="btn" type="button">Recusar</button></div>
+          </div>
+          <div class="req">
+            <div class="req-top"><h4>Coop. Vale Verde</h4><span class="who w-prod">via WhatsApp</span></div>
+            <dl><dt>Serviço</dt><dd>Drone · milho · 150 ha</dd><dt>Data</dt><dd>sáb, 01/11</dd><dt>Distância</dt><dd>41 km</dd></dl>
+            <div class="btns"><button class="btn pri" type="button">Enviar proposta</button></div>
+          </div>
+          <div class="ad"><b>Oferta vinculada · Agropecuária Central</b>Adjuvante 5 L com 8% de desconto para clientes deste serviço. Aparece para o produtor na confirmação.</div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="planos">
+  <div class="wrap">
+    <div class="plan-head">
+      <div class="sec-head" style="margin:0">
+        <span class="eyebrow">06 · Planos</span>
+        <h2>Quem cobra o serviço paga a plataforma</h2>
+        <p class="lead">O produtor nunca paga. A receita vem de assinatura mensal mais uma comissão que diminui conforme o plano sobe. Valores sugeridos para validar com os primeiros prestadores.</p>
+      </div>
+      <div class="toggle" role="group" aria-label="Período de cobrança">
+        <button type="button" id="bill-m" aria-pressed="true">Mensal</button>
+        <button type="button" id="bill-a" aria-pressed="false">Anual<em>−20%</em></button>
+      </div>
+    </div>
+
+    <div class="group-label">Prestadores de serviço <small>cobrança por CNPJ ou CPF, por módulo ativo</small></div>
+    <div class="plans">
+      <div class="plan">
+        <h3><i style="background:var(--lime)"></i>Semente</h3>
+        <p class="who-for">Para testar: autônomo com uma máquina.</p>
+        <div class="price"><b data-m="0" data-a="0">R$ 0</b><span>/mês</span></div>
+        <span class="fee">Comissão 12% por serviço</span>
+        <ul><li>1 módulo</li><li>Até 5 pedidos por mês</li><li>Agenda de 1 máquina</li><li>Perfil com avaliações</li></ul>
+      </div>
+      <div class="plan hot">
+        <span class="badge">Mais indicado</span>
+        <h3><i style="background:var(--leaf)"></i>Safra</h3>
+        <p class="who-for">Prestador ativo com até 3 máquinas.</p>
+        <div class="price"><b data-m="129" data-a="103">R$ 129</b><span>/mês</span></div>
+        <span class="fee">Comissão 6% por serviço</span>
+        <ul><li>2 módulos</li><li>Pedidos ilimitados</li><li>Agenda de 3 máquinas e operadores</li><li>Relatório de execução com mapa</li><li>Pix pela plataforma</li></ul>
+      </div>
+      <div class="plan">
+        <h3><i style="background:var(--sky)"></i>Colheita</h3>
+        <p class="who-for">Empresa de serviço com equipe e frota.</p>
+        <div class="price"><b data-m="349" data-a="279">R$ 349</b><span>/mês</span></div>
+        <span class="fee">Comissão 3% por serviço</span>
+        <ul><li>Módulos ilimitados</li><li>Frota e equipe ilimitadas</li><li>Prioridade no ranking da região</li><li>Painel financeiro e notas</li><li>Selo "Prestador verificado"</li></ul>
+      </div>
+      <div class="plan">
+        <h3><i style="background:var(--berry)"></i>Cooperativa</h3>
+        <p class="who-for">Cooperativas e redes com vários prestadores.</p>
+        <div class="price"><b data-m="sob" data-a="sob">Sob consulta</b></div>
+        <span class="fee">Comissão negociada</span>
+        <ul><li>Várias empresas num painel</li><li>Marca própria no WhatsApp</li><li>Integração com ERP</li><li>Gerente de conta</li></ul>
+      </div>
+    </div>
+
+    <div class="group-label">Lojas agropecuárias <small>anunciam produtos dentro do fluxo</small></div>
+    <div class="plans three">
+      <div class="plan">
+        <h3><i style="background:var(--lime)"></i>Balcão</h3>
+        <p class="who-for">Loja pequena, um ponto de venda.</p>
+        <div class="price"><b data-m="99" data-a="79">R$ 99</b><span>/mês</span></div>
+        <span class="fee">Comissão 5% por venda</span>
+        <ul><li>Até 50 produtos</li><li>Raio de 30 km</li><li>Vitrine no WhatsApp</li></ul>
+      </div>
+      <div class="plan hot">
+        <span class="badge">Mais indicado</span>
+        <h3><i style="background:var(--berry)"></i>Vitrine</h3>
+        <p class="who-for">Loja que quer vender junto com o serviço.</p>
+        <div class="price"><b data-m="299" data-a="239">R$ 299</b><span>/mês</span></div>
+        <span class="fee">Comissão 3% por venda</span>
+        <ul><li>Produtos ilimitados</li><li>Oferta vinculada aos módulos</li><li>Raio de 80 km</li><li>Relatório de pedidos por cultura</li></ul>
+      </div>
+      <div class="plan">
+        <h3><i style="background:var(--sky)"></i>Rede</h3>
+        <p class="who-for">Redes com várias filiais e revendas.</p>
+        <div class="price"><b data-m="sob" data-a="sob">Sob consulta</b></div>
+        <span class="fee">Comissão negociada</span>
+        <ul><li>Várias filiais</li><li>Integração de estoque</li><li>Campanhas por safra</li></ul>
+      </div>
+    </div>
+
+    <div class="group-label">Receitas extras <small>opcionais, para qualquer plano pago</small></div>
+    <div class="addons">
+      <div class="addon"><b>Destaque patrocinado</b><span>a partir de R$ 49 / semana</span><p>Aparece primeiro nas opções da região durante a janela de safra.</p></div>
+      <div class="addon"><b>Módulo adicional</b><span>R$ 39 / mês</span><p>Para quem está no Safra e quer atender um terceiro tipo de serviço.</p></div>
+      <div class="addon"><b>Antecipação de recebíveis</b><span>taxa sobre o valor</span><p>Prestador recebe na hora o serviço que o produtor paga em 30 dias.</p></div>
+    </div>
+    <p class="note">Por que assinatura + comissão baixa: em marketplace de serviço é comum o cliente fechar direto com o prestador depois do primeiro contato. Com mensalidade fixa e comissão pequena, o prestador continua tendo motivo para manter tudo na plataforma (agenda, relatório, cobrança).</p>
+  </div>
+</section>
+
+<section id="roadmap">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">07 · Roadmap</span>
+      <h2>Por onde começar</h2>
+    </div>
+    <div class="road">
+      <div class="phase">
+        <span class="when">Fase 1 · 0 a 3 meses</span>
+        <h3>MVP Pulverização</h3>
+        <ul><li>Assistente no WhatsApp Business API</li><li>Módulo Pulverização</li><li>Agenda e aceite do prestador</li><li>Uma região piloto (ex.: sudoeste goiano)</li><li>Planos Semente e Safra</li></ul>
+      </div>
+      <div class="phase">
+        <span class="when">Fase 2 · 3 a 6 meses</span>
+        <h3>Mais módulos e pagamento</h3>
+        <ul><li>Colheita, Plantio e Frete</li><li>Pix pela plataforma e repasse</li><li>Relatório com mapa da área</li><li>Plano Colheita</li></ul>
+      </div>
+      <div class="phase">
+        <span class="when">Fase 3 · 6 a 12 meses</span>
+        <h3>Lojas e recorrência</h3>
+        <ul><li>Módulo Loja com oferta vinculada</li><li>Histórico por talhão e lembretes de safra</li><li>Destaque patrocinado</li><li>Planos para cooperativas</li></ul>
+      </div>
+    </div>
+    <div class="risks">
+      <div class="risk"><b>Regras da aplicação com drone</b><p>Prestador precisa estar regular no MAPA e o produtor precisa de receituário agronômico. O módulo pede esses documentos no cadastro e no pedido.</p></div>
+      <div class="risk"><b>Custo do WhatsApp</b><p>A API oficial cobra por conversa iniciada. Entra no custo por pedido e ajuda a definir o limite do plano gratuito.</p></div>
+      <div class="risk"><b>Negócio fechado por fora</b><p>Mitigado com comissão baixa, agenda e relatório que só existem dentro da plataforma, e avaliação que só conta pedidos feitos por ela.</p></div>
+      <div class="risk"><b>Oferta antes da demanda</b><p>Começar cadastrando prestadores de uma região só, e só então divulgar o número de WhatsApp para os produtores dali.</p></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>AgroTracer · conceito de produto, outubro de 2026. Preços, nomes de prestadores e números do painel são exemplos.</span>
+    <span>Fontes de mercado: <a href="https://safras.com.br/demanda-por-drones-pulverizadores-acelera-no-brasil-e-mercado-deve-superar-r-2-bi-em-2026/" target="_blank" rel="noopener">Safras</a>, <a href="https://www.infomoney.com.br/?p=398230" target="_blank" rel="noopener">InfoMoney (Uller)</a>, <a href="https://www.mobiletime.com.br/?p=438679" target="_blank" rel="noopener">Mobile Time (Agrishare)</a>, <a href="https://gust.com/companies/alluagro" target="_blank" rel="noopener">Alluagro</a>, <a href="https://www.portalfruticola.com/?p=204962" target="_blank" rel="noopener">Portal Frutícola (Agromatch)</a>, <a href="https://economicnewsbrasil.com.br/2026/08/26/aluguel-maquinas-agricolas-produtor-colheitadeira/" target="_blank" rel="noopener">Economic News Brasil</a>, <a href="https://forbes.com.br/forbesagro/2025/07/drones-agricolas-avancam-mas-exigem-regulamentacao-mais-clara/" target="_blank" rel="noopener">Forbes Agro</a>.</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var m = document.getElementById('bill-m'), a = document.getElementById('bill-a');
+  function set(annual) {
+    m.setAttribute('aria-pressed', String(!annual));
+    a.setAttribute('aria-pressed', String(annual));
+    document.querySelectorAll('.price b[data-m]').forEach(function (el) {
+      var v = el.getAttribute(annual ? 'data-a' : 'data-m');
+      if (v === 'sob') return;
+      el.textContent = 'R$ ' + v;
+    });
+  }
+  m.addEventListener('click', function () { set(false); });
+  a.addEventListener('click', function () { set(true); });
+})();
+</script>
